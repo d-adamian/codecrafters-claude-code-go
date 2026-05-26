@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -76,5 +77,24 @@ func main() {
 	// You can use print statements as follows for debugging, they'll be visible when running tests.
 	fmt.Fprintln(os.Stderr, "Logs from your program will appear here!")
 
-	fmt.Print(resp.Choices[0].Message.Content)
+	if len(resp.Choices[0].Message.ToolCalls) > 0 {
+		toolCall := resp.Choices[0].Message.ToolCalls[0]
+		args := toolCall.Function.Arguments
+
+		var argsMap map[string]any
+		err := json.Unmarshal([]byte(args), &argsMap)
+		if err != nil {
+			panic(err)
+		}
+
+		filePath := argsMap["file_path"].(string)
+		contents, err := os.ReadFile(filePath)
+		if err != nil {
+			panic(err)
+		}
+		fmt.Println(contents)
+	} else {
+		fmt.Print(resp.Choices[0].Message.Content)
+	}
+
 }
