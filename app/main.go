@@ -92,7 +92,7 @@ func main() {
 		if err != nil {
 			panic(err)
 		}
-		fmt.Println(contents)
+		fmt.Println(string(contents))
 	} else {
 		fmt.Print(resp.Choices[0].Message.Content)
 	}
