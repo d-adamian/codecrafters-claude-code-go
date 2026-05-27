@@ -51,50 +51,71 @@ func main() {
 	}
 
 	client := openai.NewClient(option.WithAPIKey(apiKey), option.WithBaseURL(baseUrl))
-	resp, err := client.Chat.Completions.New(context.Background(),
-		openai.ChatCompletionNewParams{
-			Model: "anthropic/claude-haiku-4.5",
-			Messages: []openai.ChatCompletionMessageParamUnion{
-				{
-					OfUser: &openai.ChatCompletionUserMessageParam{
-						Content: openai.ChatCompletionUserMessageParamContentUnion{
-							OfString: openai.String(prompt),
-						},
-					},
+
+	messages := []openai.ChatCompletionMessageParamUnion{
+		{
+			OfUser: &openai.ChatCompletionUserMessageParam{
+				Content: openai.ChatCompletionUserMessageParamContentUnion{
+					OfString: openai.String(prompt),
 				},
 			},
-			Tools: []openai.ChatCompletionToolUnionParam{readFunction},
 		},
-	)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: %v\n", err)
-		os.Exit(1)
-	}
-	if len(resp.Choices) == 0 {
-		panic("No choices in response")
 	}
 
-	// You can use print statements as follows for debugging, they'll be visible when running tests.
-	fmt.Fprintln(os.Stderr, "Logs from your program will appear here!")
-
-	if len(resp.Choices[0].Message.ToolCalls) > 0 {
-		toolCall := resp.Choices[0].Message.ToolCalls[0]
-		args := toolCall.Function.Arguments
-
-		var argsMap map[string]any
-		err := json.Unmarshal([]byte(args), &argsMap)
+	is_finished := false
+	for !is_finished {
+		resp, err := client.Chat.Completions.New(context.Background(),
+			openai.ChatCompletionNewParams{
+				Model:    "anthropic/claude-haiku-4.5",
+				Messages: messages,
+				Tools:    []openai.ChatCompletionToolUnionParam{readFunction},
+			},
+		)
 		if err != nil {
-			panic(err)
+			fmt.Fprintf(os.Stderr, "error: %v\n", err)
+			os.Exit(1)
 		}
 
-		filePath := argsMap["file_path"].(string)
-		contents, err := os.ReadFile(filePath)
-		if err != nil {
-			panic(err)
+		if len(resp.Choices) == 0 {
+			panic("No choices in response")
 		}
-		fmt.Println(string(contents))
-	} else {
-		fmt.Print(resp.Choices[0].Message.Content)
+
+		resp_message := resp.Choices[0].Message
+
+		is_no_tool_calls := len(resp_message.ToolCalls) == 0
+		if is_no_tool_calls {
+			content := resp_message.Content
+			fmt.Println(string(content))
+			is_finished = true
+		} else {
+			toolCall := resp.Choices[0].Message.ToolCalls[0]
+			args := toolCall.Function.Arguments
+
+			var argsMap map[string]any
+			err := json.Unmarshal([]byte(args), &argsMap)
+			if err != nil {
+				panic(err)
+			}
+
+			filePath := argsMap["file_path"].(string)
+			contents, err := os.ReadFile(filePath)
+			if err != nil {
+				panic(err)
+			}
+			fmt.Println(string(contents))
+
+			toolMessage := openai.ChatCompletionMessageParamUnion{
+				OfTool: &openai.ChatCompletionToolMessageParam{
+					ToolCallID: toolCall.ID,
+					Content: openai.ChatCompletionToolMessageParamContentUnion{
+						OfString: openai.String(string(contents)),
+					},
+				},
+			}
+			messages = append(messages, toolMessage)
+			fmt.Fprintln(os.Stderr, "Messages: %q", messages)
+		}
 	}
 
+	fmt.Fprintln(os.Stderr, "Finished")
 }
