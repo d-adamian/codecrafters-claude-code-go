@@ -113,7 +113,7 @@ func main() {
 				},
 			}
 			messages = append(messages, toolMessage)
-			fmt.Fprintln(os.Stderr, "Messages: %q", messages)
+			fmt.Fprintf(os.Stderr, "Messages: %+v", messages)
 		}
 	}
 
