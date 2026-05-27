@@ -98,6 +98,7 @@ func main() {
 		for _, toolCall := range resp_message.ToolCalls {
 			toolCalls = append(toolCalls, openai.ChatCompletionMessageToolCallUnionParam{
 				OfFunction: &openai.ChatCompletionMessageFunctionToolCallParam{
+					ID: toolCall.ID,
 					Function: openai.ChatCompletionMessageFunctionToolCallFunctionParam{
 						Name:      toolCall.Function.Name,
 						Arguments: toolCall.Function.Arguments,
