@@ -14,7 +14,7 @@ import (
 )
 
 func logJson(value any) {
-	jsonData, err := json.Marshal(value)
+	jsonData, err := json.MarshalIndent(value, "", "  ")
 	if err != nil {
 		panic(err)
 	}
@@ -70,8 +70,8 @@ func main() {
 		},
 	}
 
-	logJson(messages[len(messages)-1])
-	fmt.Fprintln(os.Stderr, "Last message")
+	fmt.Fprintln(os.Stderr, "Initial message")
+	logJson(messages)
 
 	is_finished := false
 	for !is_finished {
@@ -111,8 +111,8 @@ func main() {
 				ToolCalls: toolCalls,
 			},
 		})
-		logJson(messages[len(messages)-1])
-		fmt.Fprintln(os.Stderr, "Last message")
+		fmt.Fprintln(os.Stderr, "All messages")
+		logJson(messages)
 
 		is_no_tool_calls := len(resp_message.ToolCalls) == 0
 		if is_no_tool_calls {
@@ -144,8 +144,8 @@ func main() {
 				},
 			}
 			messages = append(messages, toolMessage)
-			fmt.Fprintln(os.Stderr, "Last message")
-			logJson(messages[len(messages)-1])
+			fmt.Fprintln(os.Stderr, "All messages")
+			logJson(messages)
 		}
 	}
 
