@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"os/exec"
 
 	"github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/packages/param"
@@ -44,7 +45,16 @@ var WriteFunction = Function{
 	Function: doWrite,
 }
 
-var AllFunctions = []Function{ReadFunction, WriteFunction}
+var BashFunction = Function{
+	Name:        "Bash",
+	Description: "Execute a shell command",
+	Params: []FuncParam{
+		{Name: "command", Type: "string", Description: "The command to execute", Required: true},
+	},
+	Function: doBash,
+}
+
+var AllFunctions = []Function{ReadFunction, WriteFunction, BashFunction}
 
 func doRead(params map[string]any) string {
 	filePath := params[FilePathParam].(string)
@@ -63,6 +73,15 @@ func doWrite(params map[string]any) string {
 		panic(err)
 	}
 	return "File written successfully"
+}
+
+func doBash(params map[string]any) string {
+	command := params["command"].(string)
+	output, err := exec.Command("bash", "-c", command).CombinedOutput()
+	if err != nil {
+		panic(err)
+	}
+	return string(output)
 }
 
 func asToolParam(f Function) openai.ChatCompletionToolUnionParam {
