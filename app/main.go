@@ -39,7 +39,10 @@ func main() {
 		panic("Env variable OPENROUTER_API_KEY not found")
 	}
 
-	readFunction := asToolParam(ReadFunction)
+	tools := make([]openai.ChatCompletionToolUnionParam, 0)
+	for _, tool := range AllFunctions {
+		tools = append(tools, asToolParam(tool))
+	}
 
 	client := openai.NewClient(option.WithAPIKey(apiKey), option.WithBaseURL(baseUrl))
 
