@@ -10,7 +10,6 @@ import (
 	"github.com/openai/openai-go/v3"
 	"github.com/openai/openai-go/v3/option"
 	"github.com/openai/openai-go/v3/packages/param"
-	"github.com/openai/openai-go/v3/shared"
 )
 
 func logJson(value any) {
@@ -40,23 +39,7 @@ func main() {
 		panic("Env variable OPENROUTER_API_KEY not found")
 	}
 
-	readFunction := openai.ChatCompletionToolUnionParam{
-		OfFunction: &openai.ChatCompletionFunctionToolParam{
-			Function: shared.FunctionDefinitionParam{
-				Name:        "Read",
-				Description: param.NewOpt("Read and return the contents of a file"),
-				Parameters: shared.FunctionParameters{
-					"type": "object",
-					"properties": map[string]any{
-						"file_path": map[string]any{
-							"type":        "string",
-							"description": "The path to the file to read",
-						},
-					},
-				},
-			},
-		},
-	}
+	readFunction := asToolParam(ReadFunction)
 
 	client := openai.NewClient(option.WithAPIKey(apiKey), option.WithBaseURL(baseUrl))
 
@@ -122,25 +105,22 @@ func main() {
 			is_finished = true
 		} else {
 			toolCall := resp.Choices[0].Message.ToolCalls[0]
+			function := mustFindFunctionByName(toolCall.Function.Name)
 			args := toolCall.Function.Arguments
 
-			var argsMap map[string]any
-			err := json.Unmarshal([]byte(args), &argsMap)
+			var params map[string]any
+			err := json.Unmarshal([]byte(args), &params)
 			if err != nil {
 				panic(err)
 			}
 
-			filePath := argsMap["file_path"].(string)
-			contents, err := os.ReadFile(filePath)
-			if err != nil {
-				panic(err)
-			}
+			result := function.Function(params)
 
 			toolMessage := openai.ChatCompletionMessageParamUnion{
 				OfTool: &openai.ChatCompletionToolMessageParam{
 					ToolCallID: toolCall.ID,
 					Content: openai.ChatCompletionToolMessageParamContentUnion{
-						OfString: openai.String(string(contents)),
+						OfString: openai.String(result),
 					},
 				},
 			}
