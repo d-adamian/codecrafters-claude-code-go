@@ -57,7 +57,7 @@ func main() {
 	}
 
 	fmt.Fprintln(os.Stderr, "Initial message")
-	logJson(messages)
+	logJson(messages[0])
 
 	is_finished := false
 	for !is_finished {
@@ -98,8 +98,8 @@ func main() {
 				ToolCalls: toolCalls,
 			},
 		})
-		fmt.Fprintln(os.Stderr, "All messages")
-		logJson(messages)
+		fmt.Fprintln(os.Stderr, "Last message")
+		logJson(messages[len(messages)-1])
 
 		is_no_tool_calls := len(resp_message.ToolCalls) == 0
 		if is_no_tool_calls {
@@ -108,6 +108,7 @@ func main() {
 			is_finished = true
 		} else {
 			toolCall := resp.Choices[0].Message.ToolCalls[0]
+			fmt.Fprintf(os.Stderr, "Tool call: %v\n", toolCall)
 			function := mustFindFunctionByName(toolCall.Function.Name)
 			args := toolCall.Function.Arguments
 
@@ -128,8 +129,8 @@ func main() {
 				},
 			}
 			messages = append(messages, toolMessage)
-			fmt.Fprintln(os.Stderr, "All messages")
-			logJson(messages)
+			fmt.Fprintln(os.Stderr, "Last message")
+			logJson(messages[len(messages)-1])
 		}
 	}
 
