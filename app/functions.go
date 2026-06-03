@@ -44,7 +44,7 @@ var WriteFunction = Function{
 	Function: doWrite,
 }
 
-var AllFunctions = []Function{ReadFunction}
+var AllFunctions = []Function{ReadFunction, WriteFunction}
 
 func doRead(params map[string]any) string {
 	filePath := params[FilePathParam].(string)
