@@ -44,9 +44,16 @@ func main() {
 		tools = append(tools, asToolParam(tool))
 	}
 
+	skills, err := ParseSkills()
+	if err != nil {
+		panic(err)
+	}
+	skillPrompt := BuildSkillPrompt(skills)
+
 	client := openai.NewClient(option.WithAPIKey(apiKey), option.WithBaseURL(baseUrl))
 
 	messages := []openai.ChatCompletionMessageParamUnion{
+		skillPrompt,
 		{
 			OfUser: &openai.ChatCompletionUserMessageParam{
 				Content: openai.ChatCompletionUserMessageParamContentUnion{
