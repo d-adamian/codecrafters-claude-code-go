@@ -49,6 +49,7 @@ func main() {
 		panic(err)
 	}
 	skillPrompt := BuildSkillPrompt(skills)
+	prompt = TransformPrompt(skills, prompt)
 
 	client := openai.NewClient(option.WithAPIKey(apiKey), option.WithBaseURL(baseUrl))
 

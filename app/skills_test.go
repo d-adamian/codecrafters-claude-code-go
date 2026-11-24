@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -34,5 +35,53 @@ func TestParseSkill(t *testing.T) {
 	expectedDescription := "Deploys the apple service to production."
 	if skill.Description != expectedDescription {
 		t.Errorf("skill description: got=%v, want=%v", skill.Description, expectedDescription)
+	}
+
+	expectedContent := "Run the deploy script and report the version that was deployed."
+	trimmedContent := strings.TrimSpace(skill.Content)
+	if trimmedContent != expectedContent {
+		t.Errorf("skill content: got=%v, want=%v", trimmedContent, expectedContent)
+	}
+}
+
+func TestTransformPrompt(t *testing.T) {
+	appleSkill := Skill{
+		Name:        "apple",
+		Description: "Deploys the apple service to production.",
+		Content:     "Run the deploy script and report the version that was deployed.",
+	}
+
+	testCases := []struct {
+		skills   []Skill
+		prompt   string
+		expected string
+	}{
+		{
+			skills:   []Skill{appleSkill},
+			prompt:   "/apple",
+			expected: "Run the deploy script and report the version that was deployed.",
+		},
+		{
+			skills:   []Skill{},
+			prompt:   "/apple",
+			expected: "/apple",
+		},
+		{
+			skills:   []Skill{appleSkill},
+			prompt:   "/banana",
+			expected: "/banana",
+		},
+		{
+			skills:   []Skill{appleSkill},
+			prompt:   "apple",
+			expected: "apple",
+		},
+	}
+
+	for _, tc := range testCases {
+		result := TransformPrompt(tc.skills, tc.prompt)
+		if result != tc.expected {
+			t.Errorf("transformPrompt(%v, %v): got=%v, want=%v", tc.skills, tc.prompt, result, tc.expected)
+		}
 	}
 }
