@@ -51,6 +51,12 @@ func TestTransformPrompt(t *testing.T) {
 		Content:     "Run the deploy script and report the version that was deployed.",
 	}
 
+	skillWithArgumentSkill := Skill{
+		Name:        "args",
+		Description: "Test argument substitution.",
+		Content:     "Positional args: 0 - $0, 1 - $1, 2 - $2. Full args: $ARGUMENTS",
+	}
+
 	testCases := []struct {
 		skills   []Skill
 		prompt   string
@@ -75,6 +81,11 @@ func TestTransformPrompt(t *testing.T) {
 			skills:   []Skill{appleSkill},
 			prompt:   "apple",
 			expected: "apple",
+		},
+		{
+			skills:   []Skill{skillWithArgumentSkill},
+			prompt:   "/args 1 2",
+			expected: "Positional args: 0 - 1, 1 - 2, 2 - . Full args: 1 2",
 		},
 	}
 

@@ -96,8 +96,22 @@ func TransformPrompt(skills []Skill, prompt string) string {
 	for _, skill := range skills {
 		slashName := "/" + skill.Name
 		if strings.HasPrefix(prompt, slashName) {
-			return strings.Replace(prompt, slashName, skill.Content, 1)
+			argsJoined := strings.TrimSpace(strings.TrimPrefix(prompt, slashName))
+			return substituteArgs(skill.Content, argsJoined)
 		}
 	}
 	return prompt
+}
+
+func substituteArgs(content string, argsJoined string) string {
+	args := strings.Fields(argsJoined)
+	result := strings.Replace(content, "$ARGUMENTS", argsJoined, -1)
+	for i, arg := range args {
+		result = strings.Replace(result, fmt.Sprintf("$%d", i), arg, -1)
+	}
+
+	for i := len(args); i < 10; i++ {
+		result = strings.Replace(result, fmt.Sprintf("$%d", i), "", -1)
+	}
+	return result
 }
