@@ -92,15 +92,54 @@ func BuildSkillPrompt(skills []Skill) openai.ChatCompletionMessageParamUnion {
 	}
 }
 
-func TransformPrompt(skills []Skill, prompt string) string {
+func TransformPrompt(skills []Skill, prompt string) []string {
+	propmtSkills := parseSkillsPrompt(prompt, skills)
+	if !propmtSkills.hasSkills() {
+		return []string{prompt}
+	}
+
+	skillsByName := make(map[string]Skill)
 	for _, skill := range skills {
-		slashName := "/" + skill.Name
-		if strings.HasPrefix(prompt, slashName) {
-			argsJoined := strings.TrimSpace(strings.TrimPrefix(prompt, slashName))
-			return substituteArgs(skill.Content, argsJoined)
+		skillsByName[skill.Name] = skill
+	}
+
+	result := []string{}
+	for _, skill := range propmtSkills.skillNames {
+		result = append(result, substituteArgs(skillsByName[skill].Content, propmtSkills.argsJoined))
+	}
+	return result
+}
+
+type parsedSkillsPrompt struct {
+	skillNames []string
+	argsJoined string
+}
+
+func (psp *parsedSkillsPrompt) hasSkills() bool {
+	return len(psp.skillNames) > 0
+}
+
+func parseSkillsPrompt(prompt string, skills []Skill) *parsedSkillsPrompt {
+	psp := &parsedSkillsPrompt{}
+	skillNamesSet := make(map[string]bool)
+	for _, skill := range skills {
+		skillNamesSet[skill.Name] = true
+	}
+
+	isSkill := func(slashName string) bool {
+		return strings.HasPrefix(slashName, "/") && skillNamesSet[slashName[1:]]
+	}
+
+	fields := strings.Fields(prompt)
+	for i, field := range fields {
+		if isSkill(field) {
+			psp.skillNames = append(psp.skillNames, field[1:])
+		} else {
+			psp.argsJoined = strings.Join(fields[i:], " ")
+			break
 		}
 	}
-	return prompt
+	return psp
 }
 
 func substituteArgs(content string, argsJoined string) string {

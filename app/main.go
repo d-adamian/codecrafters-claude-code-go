@@ -49,19 +49,22 @@ func main() {
 		panic(err)
 	}
 	skillPrompt := BuildSkillPrompt(skills)
-	prompt = TransformPrompt(skills, prompt)
+	expandedPrompt := TransformPrompt(skills, prompt)
 
 	client := openai.NewClient(option.WithAPIKey(apiKey), option.WithBaseURL(baseUrl))
 
 	messages := []openai.ChatCompletionMessageParamUnion{
 		skillPrompt,
-		{
+	}
+
+	for _, prompt := range expandedPrompt {
+		messages = append(messages, openai.ChatCompletionMessageParamUnion{
 			OfUser: &openai.ChatCompletionUserMessageParam{
 				Content: openai.ChatCompletionUserMessageParamContentUnion{
 					OfString: openai.String(prompt),
 				},
 			},
-		},
+		})
 	}
 
 	fmt.Fprintln(os.Stderr, "Initial message")
